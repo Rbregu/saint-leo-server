@@ -53,6 +53,7 @@ app.post("/survey", async (req, res) => {
     q1:        answers?.q1 || null,
     q2:        answers?.q2 || null,
     q3:        answers?.q3 || null,
+    q4:        answers?.q4 || null,
     timestamp: timestamp || new Date().toISOString(),
   });
 
@@ -99,6 +100,7 @@ app.get("/results", async (req, res) => {
     const emailEvents = events.filter(e => e.stage === "email_submitted");
     const students    = emailEvents.filter(e => e.roles?.student).length;
     const staff       = emailEvents.filter(e => e.roles?.staff).length;
+    const faculty     = emailEvents.filter(e => e.roles?.faculty).length;
 
     const pct = (a, b) => b ? `${((a / b) * 100).toFixed(1)}%` : "0%";
 
@@ -142,6 +144,7 @@ app.get("/results", async (req, res) => {
         fileDownloads:      downloads,
         students,
         staff,
+        faculty,
       },
       conversionRates: {
         scanToEmail:     pct(emails,    scans),
