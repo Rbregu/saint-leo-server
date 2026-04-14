@@ -126,11 +126,14 @@ app.get("/results", async (req, res) => {
         )
       );
 
+      const userSurvey = surveys.find(sv => sv.email === userEmail);
+
       return {
         email:           userEmail,
         roles:           isSaintLeo(userEmail) ? (e.roles || {}) : { unknown: true },
         downloadedFile:  downloaded,
         passwordClicked: pwdClicked,
+        ageGroup:        userSurvey?.q1 || "Unknown",
         timestamp:       e.timestamp,
         userAgent:       e.user_agent,
         ip:              userIp,
