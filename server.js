@@ -135,9 +135,9 @@ app.get("/results", async (req, res) => {
     const emailEvents = events.filter(e => e.stage === "email_submitted");
     const isSaintLeo  = (email) => email && (email.endsWith("@saintleo.edu") || email.endsWith("@email.saintleo.edu"));
 
-    const students    = emailEvents.filter(e => isSaintLeo(e.email) && e.roles?.student).length;
-    const staff       = emailEvents.filter(e => isSaintLeo(e.email) && e.roles?.staff).length;
-    const faculty     = emailEvents.filter(e => isSaintLeo(e.email) && e.roles?.faculty).length;
+    const students = emailEvents.filter(e => e.roles?.student).length;
+    const staff    = emailEvents.filter(e => e.roles?.staff).length;
+    const faculty  = emailEvents.filter(e => e.roles?.faculty).length;
 
     const pct = (a, b) => b ? `${((a / b) * 100).toFixed(1)}%` : "0%";
 
