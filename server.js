@@ -130,10 +130,10 @@ app.get("/results", async (req, res) => {
 
       return {
         email:           userEmail,
-        roles:           isSaintLeo(userEmail) ? (e.roles || {}) : { unknown: true },
+        roles:           e.roles || {},
         downloadedFile:  downloaded,
         passwordClicked: pwdClicked,
-        ageGroup:        userSurvey?.q1 || "Unknown",
+        ageGroup:        userSurvey?.q1 || null,
         timestamp:       e.timestamp,
         userAgent:       e.user_agent,
         ip:              userIp,
@@ -145,7 +145,7 @@ app.get("/results", async (req, res) => {
         totalScans:         scans,
         emailsSubmitted:    emails,
         passwordsAttempted: pwds,
-        surveyResponses:    surveyed,
+        surveyResponses:    surveyed,  // data collection only — not a risk factor
         fileDownloads:      downloads,
         students,
         staff,
