@@ -42,24 +42,59 @@ app.post("/track", async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── POST /survey/age — save age group at Stage 1 (email submission) ──────────
+app.post("/survey/age", async (req, res) => {
+  const { email, roles, ageGroup, timestamp } = req.body;
+
+  // upsert — if survey already exists for this email update q1, else insert
+  const existing = await supabase.from("surveys").select("id").eq("email", email).maybeSingle();
+
+  if (existing.data) {
+    // update existing survey row with q1
+    await supabase.from("surveys").update({ q1: ageGroup }).eq("email", email);
+  } else {
+    // insert new row with just q1 filled
+    await supabase.from("surveys").insert({
+      email:     email    || null,
+      roles:     roles    || null,
+      q1:        ageGroup || null,
+      timestamp: timestamp || new Date().toISOString(),
+    });
+  }
+
+  console.log(`[AGE] ${email} → ${ageGroup}`);
+  res.json({ ok: true });
+});
+
 // ── POST /survey ──────────────────────────────────────────────────────────────
 app.post("/survey", async (req, res) => {
-  const { answers, email, roles, timestamp } = req.body;
+  const { answers, email, roles, ageGroup, timestamp } = req.body;
 
-  // insert into surveys table
-  const { error: surveyError } = await supabase.from("surveys").insert({
-    email:     email || null,
-    roles:     roles || null,
-    q1:        answers?.q1 || null,
-    q2:        answers?.q2 || null,
-    q3:        answers?.q3 || null,
-    q4:        answers?.q4 || null,
-    timestamp: timestamp || new Date().toISOString(),
-  });
+  // upsert — update existing row (created at Stage 1) or insert new
+  const existing = await supabase.from("surveys").select("id").eq("email", email).maybeSingle();
 
-  if (surveyError) {
-    console.error("[SURVEY ERROR]", surveyError.message);
-    return res.status(500).json({ error: surveyError.message });
+  if (existing.data) {
+    await supabase.from("surveys").update({
+      roles:     roles    || null,
+      q1:        ageGroup || answers?.q1 || null,
+      q2:        answers?.q2 || null,
+      q3:        answers?.q3 || null,
+      q4:        answers?.q4 || null,
+    }).eq("email", email);
+  } else {
+    const { error: surveyError } = await supabase.from("surveys").insert({
+      email:     email || null,
+      roles:     roles || null,
+      q1:        ageGroup || answers?.q1 || null,
+      q2:        answers?.q2 || null,
+      q3:        answers?.q3 || null,
+      q4:        answers?.q4 || null,
+      timestamp: timestamp || new Date().toISOString(),
+    });
+    if (surveyError) {
+      console.error("[SURVEY ERROR]", surveyError.message);
+      return res.status(500).json({ error: surveyError.message });
+    }
   }
 
   // also log a survey_answered event for funnel tracking
