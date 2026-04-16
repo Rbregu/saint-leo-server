@@ -29,7 +29,6 @@ app.post("/track", async (req, res) => {
     email:      email     || null,
     roles:      roles     || null,
     user_agent: userAgent || null,
-    ip:         req.headers["x-forwarded-for"] || req.socket.remoteAddress,
     timestamp:  timestamp || new Date().toISOString(),
   });
 
@@ -145,20 +144,16 @@ app.get("/results", async (req, res) => {
     // file_downloaded fires BEFORE email is entered so ev.email is null — match by IP instead
     // password_clicked fires AFTER email entry — match by email first, fallback to IP
     const emailList = emailEvents.map(e => {
-      const userIp    = e.ip;
       const userEmail = e.email;
 
       const downloaded = events.some(ev =>
         ev.stage === "file_downloaded" &&
-        ev.ip && userIp && ev.ip === userIp
+        ev.email && userEmail && ev.email === userEmail
       );
 
       const pwdClicked = events.some(ev =>
         ev.stage === "password_clicked" &&
-        (
-          (ev.email && userEmail && ev.email === userEmail) ||
-          (!ev.email && ev.ip && userIp && ev.ip === userIp)
-        )
+        ev.email && userEmail && ev.email === userEmail
       );
 
       const userSurvey = surveys.find(sv => sv.email === userEmail);
@@ -171,7 +166,6 @@ app.get("/results", async (req, res) => {
         ageGroup:        userSurvey?.q1 || null,
         timestamp:       e.timestamp,
         userAgent:       e.user_agent,
-        ip:              userIp,
       };
     });
 
