@@ -110,7 +110,7 @@ app.post("/survey", async (req, res) => {
   res.json({ ok: true });
 });
 
-//── GET /results ──────────────────────────────────────────────────────────────
+// ── GET /results ──────────────────────────────────────────────────────────────
 app.get("/results", async (req, res) => {
   try {
     const [eventsRes, surveysRes] = await Promise.all([
@@ -126,12 +126,21 @@ app.get("/results", async (req, res) => {
 
     // ── compute summary ───────────────────────────────────────────────────────
     const scans     = events.filter(e => e.stage === "page_loaded").length;
-    const emails    = events.filter(e => e.stage === "email_submitted").length;
-    const pwds      = events.filter(e => e.stage === "password_clicked").length;
+    const pwds      = [...new Set(events.filter(e => e.stage === "password_clicked" && e.email).map(e => e.email?.toLowerCase().trim()))].length;
     const surveyed  = events.filter(e => e.stage === "survey_answered").length;
-    const downloads = events.filter(e => e.stage === "file_downloaded").length;
+    const downloads = [...new Set(events.filter(e => e.stage === "file_downloaded" && e.email).map(e => e.email?.toLowerCase().trim()))].length;
 
-    const emailEvents = events.filter(e => e.stage === "email_submitted");
+    // deduplicate by email — keep first submission only
+    const allEmailEvents = events.filter(e => e.stage === "email_submitted");
+    const seenEmails = new Set();
+    const emailEvents = allEmailEvents.filter(e => {
+      const email = e.email?.toLowerCase().trim();
+      if (!email || seenEmails.has(email)) return false;
+      seenEmails.add(email);
+      return true;
+    });
+
+    const emails = emailEvents.length;
     const isSaintLeo  = (email) => email && (email.endsWith("@saintleo.edu") || email.endsWith("@email.saintleo.edu"));
 
     const students = emailEvents.filter(e => e.roles?.student).length;
@@ -169,34 +178,33 @@ app.get("/results", async (req, res) => {
       };
     });
 
- res.json({
-  summary: {
-    totalScans:         scans,
-    emailsSubmitted:    emails,
-    passwordsAttempted: pwds,
-    surveyResponses:    surveyed,  // data collection only — not a risk factor
-    fileDownloads:      downloads,
-    students,
-    staff,
-    faculty,
-  },
-  conversionRates: {
-    scanToEmail:     pct(emails,    scans),
-    scanToDownload:  pct(downloads, scans),
-    emailToPassword: pct(pwds,      emails),
-    overallRisk:     pct(pwds,      scans),
-  },
-  emails:    emailList,
-  surveys,
-  rawEvents: events,
-});
+    res.json({
+      summary: {
+        totalScans:         scans,
+        emailsSubmitted:    emails,
+        passwordsAttempted: pwds,
+        surveyResponses:    surveyed,  // data collection only — not a risk factor
+        fileDownloads:      downloads,
+        students,
+        staff,
+        faculty,
+      },
+      conversionRates: {
+        scanToEmail:     pct(emails,    scans),
+        scanToDownload:  pct(downloads, scans),
+        emailToPassword: pct(pwds,      emails),
+        overallRisk:     pct(pwds,      scans),
+      },
+      emails:    emailList,
+      surveys,
+      rawEvents: events,
+    });
 
   } catch (err) {
     console.error("[RESULTS ERROR]", err.message);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // ── GET /results/pretty ───────────────────────────────────────────────────────
 app.get("/results/pretty", async (req, res) => {
