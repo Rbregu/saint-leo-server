@@ -110,7 +110,7 @@ app.post("/survey", async (req, res) => {
   res.json({ ok: true });
 });
 
-── GET /results ──────────────────────────────────────────────────────────────
+//── GET /results ──────────────────────────────────────────────────────────────
 app.get("/results", async (req, res) => {
   try {
     const [eventsRes, surveysRes] = await Promise.all([
