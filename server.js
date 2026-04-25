@@ -21,14 +21,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── POST /track ───────────────────────────────────────────────────────────────
 app.post("/track", async (req, res) => {
-  const { stage, email, roles, userAgent, timestamp } = req.body;
+  const { stage, email, roles, timestamp } = req.body;
   if (!stage) return res.status(400).json({ error: "stage is required" });
 
   const { error } = await supabase.from("events").insert({
     stage,
     email:      email     || null,
     roles:      roles     || null,
-    user_agent: userAgent || null,
     timestamp:  timestamp || new Date().toISOString(),
   });
 
@@ -174,7 +173,6 @@ app.get("/results", async (req, res) => {
         passwordClicked: pwdClicked,
         ageGroup:        userSurvey?.q1 || null,
         timestamp:       e.timestamp,
-        userAgent:       e.user_agent,
       };
     });
 
