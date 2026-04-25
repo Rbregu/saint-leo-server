@@ -110,95 +110,66 @@ app.post("/survey", async (req, res) => {
   res.json({ ok: true });
 });
 
-// ── GET /results ──────────────────────────────────────────────────────────────
-// app.get("/results", async (req, res) => {
-//   try {
-//     const [eventsRes, surveysRes] = await Promise.all([
-//       supabase.from("events").select("*").order("timestamp", { ascending: true }),
-//       supabase.from("surveys").select("*").order("timestamp", { ascending: true }),
-//     ]);
-
-//     if (eventsRes.error)  throw new Error(eventsRes.error.message);
-//     if (surveysRes.error) throw new Error(surveysRes.error.message);
-
-//     const events  = eventsRes.data  || [];
-//     const surveys = surveysRes.data || [];
-
-//     // ── compute summary ───────────────────────────────────────────────────────
-//     const scans     = events.filter(e => e.stage === "page_loaded").length;
-//     const emails    = events.filter(e => e.stage === "email_submitted").length;
-//     const pwds      = events.filter(e => e.stage === "password_clicked").length;
-//     const surveyed  = events.filter(e => e.stage === "survey_answered").length;
-//     const downloads = events.filter(e => e.stage === "file_downloaded").length;
-
-//     const emailEvents = events.filter(e => e.stage === "email_submitted");
-//     const isSaintLeo  = (email) => email && (email.endsWith("@saintleo.edu") || email.endsWith("@email.saintleo.edu"));
-
-//     const students = emailEvents.filter(e => e.roles?.student).length;
-//     const staff    = emailEvents.filter(e => e.roles?.staff).length;
-//     const faculty  = emailEvents.filter(e => e.roles?.faculty).length;
-
-//     const pct = (a, b) => b ? `${((a / b) * 100).toFixed(1)}%` : "0%";
-
-//     // build email list with accurate per-user cross-referencing
-//     // file_downloaded fires BEFORE email is entered so ev.email is null — match by IP instead
-//     // password_clicked fires AFTER email entry — match by email first, fallback to IP
-//     const emailList = emailEvents.map(e => {
-//       const userEmail = e.email;
-
-//       const downloaded = events.some(ev =>
-//         ev.stage === "file_downloaded" &&
-//         ev.email && userEmail && ev.email === userEmail
-//       );
-
-//       const pwdClicked = events.some(ev =>
-//         ev.stage === "password_clicked" &&
-//         ev.email && userEmail && ev.email === userEmail
-//       );
-
-//       const userSurvey = surveys.find(sv => sv.email === userEmail);
-
-//       return {
-//         email:           userEmail,
-//         roles:           e.roles || {},
-//         downloadedFile:  downloaded,
-//         passwordClicked: pwdClicked,
-//         ageGroup:        userSurvey?.q1 || null,
-//         timestamp:       e.timestamp,
-//         userAgent:       e.user_agent,
-//       };
-//     });
-
-//     res.json({
-//       summary: {
-//         totalScans:         scans,
-//         emailsSubmitted:    emails,
-//         passwordsAttempted: pwds,
-//         surveyResponses:    surveyed,  // data collection only — not a risk factor
-//         fileDownloads:      downloads,
-//         students,
-//         staff,
-//         faculty,
-//       },
-//       conversionRates: {
-//         scanToEmail:     pct(emails,    scans),
-//         scanToDownload:  pct(downloads, scans),
-//         emailToPassword: pct(pwds,      emails),
-//         overallRisk:     pct(pwds,      scans),
-//       },
-//       emails:    emailList,
-//       surveys,
-//       rawEvents: events,
-//     });
-
-//   } catch (err) {
-//     console.error("[RESULTS ERROR]", err.message);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+── GET /results ──────────────────────────────────────────────────────────────
 app.get("/results", async (req, res) => {
-  // TEMP: return zeros for screenshot
-  return res.json({
+  try {
+    const [eventsRes, surveysRes] = await Promise.all([
+      supabase.from("events").select("*").order("timestamp", { ascending: true }),
+      supabase.from("surveys").select("*").order("timestamp", { ascending: true }),
+    ]);
+
+    if (eventsRes.error)  throw new Error(eventsRes.error.message);
+    if (surveysRes.error) throw new Error(surveysRes.error.message);
+
+    const events  = eventsRes.data  || [];
+    const surveys = surveysRes.data || [];
+
+    // ── compute summary ───────────────────────────────────────────────────────
+    const scans     = events.filter(e => e.stage === "page_loaded").length;
+    const emails    = events.filter(e => e.stage === "email_submitted").length;
+    const pwds      = events.filter(e => e.stage === "password_clicked").length;
+    const surveyed  = events.filter(e => e.stage === "survey_answered").length;
+    const downloads = events.filter(e => e.stage === "file_downloaded").length;
+
+    const emailEvents = events.filter(e => e.stage === "email_submitted");
+    const isSaintLeo  = (email) => email && (email.endsWith("@saintleo.edu") || email.endsWith("@email.saintleo.edu"));
+
+    const students = emailEvents.filter(e => e.roles?.student).length;
+    const staff    = emailEvents.filter(e => e.roles?.staff).length;
+    const faculty  = emailEvents.filter(e => e.roles?.faculty).length;
+
+    const pct = (a, b) => b ? `${((a / b) * 100).toFixed(1)}%` : "0%";
+
+    // build email list with accurate per-user cross-referencing
+    // file_downloaded fires BEFORE email is entered so ev.email is null — match by IP instead
+    // password_clicked fires AFTER email entry — match by email first, fallback to IP
+    const emailList = emailEvents.map(e => {
+      const userEmail = e.email;
+
+      const downloaded = events.some(ev =>
+        ev.stage === "file_downloaded" &&
+        ev.email && userEmail && ev.email === userEmail
+      );
+
+      const pwdClicked = events.some(ev =>
+        ev.stage === "password_clicked" &&
+        ev.email && userEmail && ev.email === userEmail
+      );
+
+      const userSurvey = surveys.find(sv => sv.email === userEmail);
+
+      return {
+        email:           userEmail,
+        roles:           e.roles || {},
+        downloadedFile:  downloaded,
+        passwordClicked: pwdClicked,
+        ageGroup:        userSurvey?.q1 || null,
+        timestamp:       e.timestamp,
+        userAgent:       e.user_agent,
+      };
+    });
+
+     return res.json({
     summary: {
       totalScans: 0,
       emailsSubmitted: 0,
@@ -220,9 +191,12 @@ app.get("/results", async (req, res) => {
     rawEvents: [],
   });
 
-  // rest of your original code stays here untouched
-  try {
-    ...
+  } catch (err) {
+    console.error("[RESULTS ERROR]", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // ── GET /results/pretty ───────────────────────────────────────────────────────
 app.get("/results/pretty", async (req, res) => {
