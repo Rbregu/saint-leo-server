@@ -169,27 +169,27 @@ app.get("/results", async (req, res) => {
       };
     });
 
-     return res.json({
-    summary: {
-      totalScans: 0,
-      emailsSubmitted: 0,
-      passwordsAttempted: 0,
-      surveyResponses: 0,
-      fileDownloads: 0,
-      students: 0,
-      staff: 0,
-      faculty: 0,
-    },
-    conversionRates: {
-      scanToEmail: 0,
-      scanToDownload: 0,
-      emailToPassword: 0,
-      overallRisk: 0,
-    },
-    emails: [],
-    surveys: [],
-    rawEvents: [],
-  });
+ res.json({
+  summary: {
+    totalScans:         scans,
+    emailsSubmitted:    emails,
+    passwordsAttempted: pwds,
+    surveyResponses:    surveyed,  // data collection only — not a risk factor
+    fileDownloads:      downloads,
+    students,
+    staff,
+    faculty,
+  },
+  conversionRates: {
+    scanToEmail:     pct(emails,    scans),
+    scanToDownload:  pct(downloads, scans),
+    emailToPassword: pct(pwds,      emails),
+    overallRisk:     pct(pwds,      scans),
+  },
+  emails:    emailList,
+  surveys,
+  rawEvents: events,
+});
 
   } catch (err) {
     console.error("[RESULTS ERROR]", err.message);
